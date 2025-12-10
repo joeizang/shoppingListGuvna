@@ -20,18 +20,26 @@ import com.josephizang.shoplistguvna.presentation.ListDetailViewModel
 import com.josephizang.shoplistguvna.presentation.ListDetailViewModelFactory
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.DateRange
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Settings
+import com.josephizang.shoplistguvna.presentation.ArchivedListsScreen
+import com.josephizang.shoplistguvna.presentation.SplashScreen
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.josephizang.shoplistguvna.data.UserPreferencesRepository
 import com.josephizang.shoplistguvna.presentation.SettingsScreen
@@ -59,7 +67,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     bottomBar = {
                         // Only show bottom bar on top-level screens
-                        if (currentRoute == "home" || currentRoute == "settings") {
+                        if (currentRoute == "home" || currentRoute == "settings" || currentRoute == "history") {
                             NavigationBar(
                                 containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
                             ) {
@@ -72,8 +80,44 @@ class MainActivity : ComponentActivity() {
                                             restoreState = true
                                         }
                                     },
-                                    icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
-                                    label = { Text("Home") }
+                                    icon = { 
+                                        Icon(
+                                            if (currentRoute == "home") Icons.Filled.Home else Icons.Outlined.Home, 
+                                            contentDescription = "Home"
+                                        ) 
+                                    },
+                                    label = { Text("Home") },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                                        unselectedIconColor = Color.Gray,
+                                        unselectedTextColor = Color.Gray,
+                                        indicatorColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.15f)
+                                    )
+                                )
+                                NavigationBarItem(
+                                    selected = currentRoute == "history",
+                                    onClick = {
+                                        navController.navigate("history") {
+                                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    },
+                                    icon = { 
+                                        Icon(
+                                            if (currentRoute == "history") Icons.Filled.DateRange else Icons.Outlined.DateRange, 
+                                            contentDescription = "History"
+                                        ) 
+                                    },
+                                    label = { Text("History") },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                                        unselectedIconColor = Color.Gray,
+                                        unselectedTextColor = Color.Gray,
+                                        indicatorColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.15f)
+                                    )
                                 )
                                 NavigationBarItem(
                                     selected = currentRoute == "settings",
@@ -84,8 +128,20 @@ class MainActivity : ComponentActivity() {
                                             restoreState = true
                                         }
                                     },
-                                    icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings") },
-                                    label = { Text("Settings") }
+                                    icon = { 
+                                        Icon(
+                                            if (currentRoute == "settings") Icons.Filled.Settings else Icons.Outlined.Settings, 
+                                            contentDescription = "Settings"
+                                        ) 
+                                    },
+                                    label = { Text("Settings") },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                                        unselectedIconColor = Color.Gray,
+                                        unselectedTextColor = Color.Gray,
+                                        indicatorColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.15f)
+                                    )
                                 )
                             }
                         }
@@ -93,14 +149,37 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     NavHost(
                         navController = navController,
-                        startDestination = "home",
+                        startDestination = "splash",
                         modifier = Modifier.padding(innerPadding)
                     ) {
+                        composable("splash") {
+                            SplashScreen(
+                                onNavigateToHome = {
+                                    navController.navigate("home") {
+                                        popUpTo("splash") { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+
                         composable("home") {
                             val viewModel: HomeViewModel = viewModel(
                                 factory = HomeViewModelFactory(repository)
                             )
                             HomeScreen(
+                                viewModel = viewModel,
+                                isTotalsVisible = isTotalsVisible,
+                                onNavigateToList = { listId ->
+                                    navController.navigate("list/$listId")
+                                }
+                            )
+                        }
+
+                        composable("history") {
+                            val viewModel: HomeViewModel = viewModel(
+                                factory = HomeViewModelFactory(repository)
+                            )
+                            ArchivedListsScreen(
                                 viewModel = viewModel,
                                 isTotalsVisible = isTotalsVisible,
                                 onNavigateToList = { listId ->

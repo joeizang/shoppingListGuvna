@@ -59,7 +59,7 @@ fun HomeScreen(
     isTotalsVisible: Boolean,
     onNavigateToList: (Long) -> Unit
 ) {
-    val recentLists by viewModel.recentLists.collectAsState()
+    val activeLists by viewModel.activeLists.collectAsState()
     var showCreateDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -95,7 +95,7 @@ fun HomeScreen(
                 .fillMaxSize()
         ) {
             Text(
-                text = "Recent Lists",
+                text = "Your Lists",
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
@@ -104,7 +104,7 @@ fun HomeScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(recentLists) { list ->
+                items(activeLists) { list ->
                     ShoppingListCard(
                         list = list, 
                         isTotalVisible = isTotalsVisible,

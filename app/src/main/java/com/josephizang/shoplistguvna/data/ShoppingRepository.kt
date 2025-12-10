@@ -7,8 +7,12 @@ import kotlinx.coroutines.flow.Flow
 
 class ShoppingRepository(private val shoppingDao: ShoppingDao) {
 
-    val last10Lists: Flow<List<ShoppingList>> = shoppingDao.getLast10Lists()
-    val allLists: Flow<List<ShoppingList>> = shoppingDao.getAllLists()
+    val activeLists: Flow<List<ShoppingList>> = shoppingDao.getActiveLists()
+    val archivedLists: Flow<List<ShoppingList>> = shoppingDao.getArchivedLists()
+
+    suspend fun setListArchived(listId: Long, isArchived: Boolean) {
+        shoppingDao.updateListArchivedStatus(listId, isArchived)
+    }
 
     fun getItemsForList(listId: Long): Flow<List<ShoppingItem>> = shoppingDao.getItemsForList(listId)
 

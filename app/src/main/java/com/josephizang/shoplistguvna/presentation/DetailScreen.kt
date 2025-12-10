@@ -20,8 +20,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Unarchive
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -85,6 +87,19 @@ fun ListDetailScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+
+                actions = {
+                    val isArchived = currentList?.isArchived == true
+                    IconButton(onClick = {
+                        if (isArchived) viewModel.unarchiveList() else viewModel.archiveList()
+                        onBack()
+                    }) {
+                        Icon(
+                            if (isArchived) Icons.Default.Unarchive else Icons.Default.Archive,
+                            contentDescription = if (isArchived) "Unarchive List" else "Archive List"
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

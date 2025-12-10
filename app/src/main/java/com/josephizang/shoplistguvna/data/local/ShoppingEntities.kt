@@ -11,7 +11,8 @@ data class ShoppingList(
     val name: String,
     val createdAt: Date = Date(),
     val totalEstimated: Double = 0.0, // Cached total for summary views
-    val totalItems: Int = 0 // Cached item count
+    val totalItems: Int = 0, // Cached item count
+    val isArchived: Boolean = false // active vs retired
 )
 
 @Entity(

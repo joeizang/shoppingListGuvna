@@ -12,8 +12,17 @@ import kotlinx.coroutines.launch
 
 class HomeViewModel(private val repository: ShoppingRepository) : ViewModel() {
 
-    val recentLists: StateFlow<List<ShoppingList>> = repository.last10Lists
+    val activeLists: StateFlow<List<ShoppingList>> = repository.activeLists
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val archivedLists: StateFlow<List<ShoppingList>> = repository.archivedLists
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun unarchiveList(listId: Long) {
+        viewModelScope.launch {
+            repository.setListArchived(listId, false)
+        }
+    }
 
     fun createList(name: String) {
         viewModelScope.launch {
