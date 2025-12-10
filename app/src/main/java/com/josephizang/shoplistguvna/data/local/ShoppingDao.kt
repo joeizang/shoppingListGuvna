@@ -13,11 +13,17 @@ import kotlinx.coroutines.flow.Flow
 interface ShoppingDao {
 
     // --- Lists ---
-    @Query("SELECT * FROM shopping_lists ORDER BY createdAt DESC LIMIT 10")
-    fun getLast10Lists(): Flow<List<ShoppingList>>
+    @Query("SELECT * FROM shopping_lists WHERE isArchived = 0 ORDER BY createdAt DESC LIMIT 10")
+    fun getLast10ActiveLists(): Flow<List<ShoppingList>>
 
-    @Query("SELECT * FROM shopping_lists ORDER BY createdAt DESC")
-    fun getAllLists(): Flow<List<ShoppingList>>
+    @Query("SELECT * FROM shopping_lists WHERE isArchived = 0 ORDER BY createdAt DESC")
+    fun getActiveLists(): Flow<List<ShoppingList>>
+
+    @Query("SELECT * FROM shopping_lists WHERE isArchived = 1 ORDER BY createdAt DESC")
+    fun getArchivedLists(): Flow<List<ShoppingList>>
+
+    @Query("UPDATE shopping_lists SET isArchived = :isArchived WHERE id = :listId")
+    suspend fun updateListArchivedStatus(listId: Long, isArchived: Boolean)
 
     @Query("SELECT * FROM shopping_lists WHERE id = :id")
     suspend fun getListById(id: Long): ShoppingList?

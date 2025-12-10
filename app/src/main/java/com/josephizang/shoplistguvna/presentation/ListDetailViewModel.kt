@@ -59,6 +59,18 @@ class ListDetailViewModel(
             loadListMetadata()
         }
     }
+
+    fun archiveList() {
+        viewModelScope.launch {
+            repository.setListArchived(listId, true)
+        }
+    }
+
+    fun unarchiveList() {
+        viewModelScope.launch {
+            repository.setListArchived(listId, false)
+        }
+    }
 }
 
 class ListDetailViewModelFactory(
