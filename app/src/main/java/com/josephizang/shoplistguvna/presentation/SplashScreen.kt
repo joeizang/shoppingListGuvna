@@ -39,40 +39,49 @@ fun SplashScreen(onNavigateToHome: () -> Unit) {
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
+        Image(
+            painter = painterResource(id = R.drawable.splash_hero),
+            contentDescription = "Welcome to ShopList Guvna",
+            contentScale = ContentScale.Crop, // Crop to fill the screen
+            modifier = Modifier.fillMaxSize()
+        )
+        
+        // Overlay gradient for text readability (optional but good for accessibility)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    androidx.compose.ui.graphics.Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.6f)),
+                        startY = 300f
+                    )
+                )
+        )
+
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(24.dp)
+            verticalArrangement = Arrangement.Bottom,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp)
+                .padding(bottom = 48.dp)
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.splash_hero),
-                contentDescription = "Welcome to ShopList Guvna",
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f) // Takes up available space but leaves room for text
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
             Text(
                 text = "ShopList Guvna",
                 style = MaterialTheme.typography.displayMedium.copy(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
                 ),
-                color = MaterialTheme.colorScheme.primary,
+                color = Color.White, // Always white on top of image
                 textAlign = TextAlign.Center
             )
             
             Text(
                 text = "Groceries sorted. Life simplified.",
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                color = Color.White.copy(alpha = 0.9f),
                 textAlign = TextAlign.Center
             )
-            
-            Spacer(modifier = Modifier.height(48.dp))
         }
     }
 }

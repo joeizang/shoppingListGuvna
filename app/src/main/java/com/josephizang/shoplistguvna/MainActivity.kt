@@ -48,6 +48,7 @@ import com.josephizang.shoplistguvna.ui.theme.ShopListGuvnaTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(R.style.Theme_ShopListGuvna)
         super.onCreate(savedInstanceState)
 
         val database = AppDatabase.getDatabase(this)
