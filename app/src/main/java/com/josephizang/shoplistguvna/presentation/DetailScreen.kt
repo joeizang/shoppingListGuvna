@@ -73,7 +73,7 @@ fun ListDetailScreen(
     var showAddItemSheet by remember { mutableStateOf(false) }
 
     // Currency formatter
-    val format = NumberFormat.getCurrencyInstance(Locale("en", "NG"))
+
 
     Scaffold(
         topBar = {
@@ -128,17 +128,32 @@ fun ListDetailScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        "Total",
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                    Text(
-                        format.format(currentList?.totalEstimated ?: 0.0),
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Spent",
+                            style = MaterialTheme.typography.labelMedium
                         )
-                    )
+                        ResponsiveMoneyText(
+                             amount = currentList?.totalBought ?: 0.0,
+                             color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.End
+                    ) {
+                        Text(
+                            "Total",
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                        ResponsiveMoneyText(
+                             amount = currentList?.totalEstimated ?: 0.0,
+                             color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
             }
         }
@@ -285,8 +300,28 @@ fun AddItemSheet(onDismiss: () -> Unit, onAdd: (String, Int, Double) -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Add to List")
             }
         }
     }
+}
+
+@Composable
+fun ResponsiveMoneyText(amount: Double, color: Color) {
+    val format = NumberFormat.getCurrencyInstance(Locale("en", "NG"))
+    val text = format.format(amount)
+    
+    val style = when {
+        text.length > 15 -> MaterialTheme.typography.titleSmall
+        text.length > 11 -> MaterialTheme.typography.titleMedium
+        else -> MaterialTheme.typography.titleLarge
+    }
+
+    Text(
+        text = text,
+        style = style.copy(
+            fontWeight = FontWeight.Bold,
+            color = color
+        ),
+        maxLines = 1
+    )
 }

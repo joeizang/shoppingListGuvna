@@ -149,6 +149,11 @@ fun ShoppingListCard(list: ShoppingList, isTotalVisible: Boolean, onClick: () ->
     val format = NumberFormat.getCurrencyInstance(Locale("en", "NG"))
     val date = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(list.createdAt)
     val cardColor = getCardColor(list.id)
+    
+    // Calculate Pending (Start Amount - Spent Amount)
+    // If we bought more than estimated (logic wise shouldn't happen often if strict, but possible), clamp to 0 or show negative? 
+    // Usually Pending = Estimated - Bought.
+    val pending = list.totalEstimated - list.totalBought
 
     Card(
         modifier = Modifier
@@ -171,7 +176,7 @@ fun ShoppingListCard(list: ShoppingList, isTotalVisible: Boolean, onClick: () ->
                 Text(
                     text = list.name,
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                    color = Color.Black // Ensure text is visible on light accent color
+                    color = Color.Black 
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
@@ -188,12 +193,27 @@ fun ShoppingListCard(list: ShoppingList, isTotalVisible: Boolean, onClick: () ->
                 )
             }
             
-            // Toggleable Total Amount
-             Text(
-                text = if (isTotalVisible) format.format(list.totalEstimated) else "****",
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = if(isTotalVisible) MaterialTheme.colorScheme.primary else Color.Black.copy(alpha = 0.5f) // Brick Red or obscured
-            )
+            // Amounts Column
+            Column(horizontalAlignment = Alignment.End) {
+                 Text(
+                    text = "PENDING",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = Color.Black.copy(alpha = 0.5f)
+                )
+                Text(
+                    text = if (isTotalVisible) format.format(pending) else "****",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = if(isTotalVisible) MaterialTheme.colorScheme.primary else Color.Black.copy(alpha = 0.5f)
+                )
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                Text(
+                    text = if (isTotalVisible) "Orig: ${format.format(list.totalEstimated)}" else "Orig: ****",
+                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                    color = Color.Black.copy(alpha = 0.6f)
+                )
+            }
         }
     }
 }

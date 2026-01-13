@@ -69,12 +69,16 @@ interface ShoppingDao {
     @Query("SELECT COUNT(*) FROM shopping_items WHERE listId = :listId")
     suspend fun getListItemCount(listId: Long): Int
 
-    @Query("UPDATE shopping_lists SET totalEstimated = :total, totalItems = :count WHERE id = :listId")
-    suspend fun updateListTotalAndCount(listId: Long, total: Double, count: Int)
+    @Query("SELECT SUM(quantity * pricePerUnit) FROM shopping_items WHERE listId = :listId AND isChecked = 1")
+    suspend fun getListBoughtTotal(listId: Long): Double?
+
+    @Query("UPDATE shopping_lists SET totalEstimated = :total, totalBought = :bought, totalItems = :count WHERE id = :listId")
+    suspend fun updateListTotalAndCount(listId: Long, total: Double, bought: Double, count: Int)
 
     suspend fun calculateAndUpdateListTotal(listId: Long) {
         val total = getListTotal(listId) ?: 0.0
+        val bought = getListBoughtTotal(listId) ?: 0.0
         val count = getListItemCount(listId)
-        updateListTotalAndCount(listId, total, count)
+        updateListTotalAndCount(listId, total, bought, count)
     }
 }

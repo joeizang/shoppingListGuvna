@@ -50,6 +50,7 @@ class ListDetailViewModel(
     fun toggleItemChecked(item: ShoppingItem) {
         viewModelScope.launch {
             repository.updateItem(item.copy(isChecked = !item.isChecked))
+            loadListMetadata()
         }
     }
     
