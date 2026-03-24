@@ -1,7 +1,7 @@
 package com.josephizang.shoplistguvna
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -27,6 +27,7 @@ import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Settings
 import com.josephizang.shoplistguvna.presentation.ArchivedListsScreen
+import com.josephizang.shoplistguvna.presentation.BiometricAuthScreen
 import com.josephizang.shoplistguvna.presentation.SplashScreen
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -46,7 +47,7 @@ import com.josephizang.shoplistguvna.presentation.SettingsScreen
 import kotlinx.coroutines.launch
 import com.josephizang.shoplistguvna.ui.theme.ShopListGuvnaTheme
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(R.style.Theme_ShopListGuvna)
         super.onCreate(savedInstanceState)
@@ -156,8 +157,18 @@ class MainActivity : ComponentActivity() {
                         composable("splash") {
                             SplashScreen(
                                 onNavigateToHome = {
-                                    navController.navigate("home") {
+                                    navController.navigate("auth") {
                                         popUpTo("splash") { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+
+                        composable("auth") {
+                            BiometricAuthScreen(
+                                onAuthSuccess = {
+                                    navController.navigate("home") {
+                                        popUpTo("auth") { inclusive = true }
                                     }
                                 }
                             )
