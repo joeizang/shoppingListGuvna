@@ -11,28 +11,28 @@ import kotlinx.coroutines.flow.map
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
-class UserPreferencesRepository(private val context: Context) {
+class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
     private val IS_DARK_MODE = booleanPreferencesKey("is_dark_mode")
     private val IS_TOTALS_VISIBLE = booleanPreferencesKey("is_totals_visible")
 
-    val isDarkMode: Flow<Boolean> = context.dataStore.data
+    val isDarkMode: Flow<Boolean> = dataStore.data
         .map { preferences ->
-            preferences[IS_DARK_MODE] ?: true // Default to True
+            preferences[IS_DARK_MODE] ?: true
         }
 
-    val isTotalsVisible: Flow<Boolean> = context.dataStore.data
+    val isTotalsVisible: Flow<Boolean> = dataStore.data
         .map { preferences ->
-            preferences[IS_TOTALS_VISIBLE] ?: true // Default to True
+            preferences[IS_TOTALS_VISIBLE] ?: true
         }
 
     suspend fun setDarkMode(enabled: Boolean) {
-        context.dataStore.edit { preferences ->
+        dataStore.edit { preferences ->
             preferences[IS_DARK_MODE] = enabled
         }
     }
 
     suspend fun setTotalsVisible(enabled: Boolean) {
-        context.dataStore.edit { preferences ->
+        dataStore.edit { preferences ->
             preferences[IS_TOTALS_VISIBLE] = enabled
         }
     }

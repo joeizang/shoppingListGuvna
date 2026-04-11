@@ -1,7 +1,5 @@
 package com.josephizang.shoplistguvna.presentation
 
-import androidx.biometric.BiometricManager
-import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -26,14 +24,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import com.josephizang.shoplistguvna.biometric.BiometricAuthHandler
 
 @Composable
 fun BiometricAuthScreen(
-    onAuthSuccess: () -> Unit
+    onAuthSuccess: () -> Unit,
+    handler: BiometricAuthHandler
 ) {
     val context = LocalContext.current
     val activity = context as FragmentActivity
@@ -41,63 +41,30 @@ fun BiometricAuthScreen(
     var authFailed by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
-    val biometricManager = BiometricManager.from(context)
-    val canAuthenticate = biometricManager.canAuthenticate(
-        BiometricManager.Authenticators.BIOMETRIC_STRONG or
-                BiometricManager.Authenticators.BIOMETRIC_WEAK
-    )
-
     fun showBiometricPrompt() {
-        val executor = ContextCompat.getMainExecutor(context)
-
-        val callback = object : BiometricPrompt.AuthenticationCallback() {
-            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                super.onAuthenticationSucceeded(result)
-                onAuthSuccess()
-            }
-
-            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                super.onAuthenticationError(errorCode, errString)
+        handler.authenticate(
+            activity = activity,
+            onSuccess = onAuthSuccess,
+            onFailure = { msg: String ->
                 authFailed = true
-                errorMessage = errString.toString()
+                errorMessage = msg
             }
-
-            override fun onAuthenticationFailed() {
-                super.onAuthenticationFailed()
-                authFailed = true
-                errorMessage = "Authentication failed. Try again."
-            }
-        }
-
-        val biometricPrompt = BiometricPrompt(activity, executor, callback)
-
-        val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("ShopList Guvna")
-            .setSubtitle("Verify your identity to continue")
-            .setNegativeButtonText("Cancel")
-            .setAllowedAuthenticators(
-                BiometricManager.Authenticators.BIOMETRIC_STRONG or
-                        BiometricManager.Authenticators.BIOMETRIC_WEAK
-            )
-            .build()
-
-        biometricPrompt.authenticate(promptInfo)
+        )
     }
 
     LaunchedEffect(Unit) {
-        when (canAuthenticate) {
-            BiometricManager.BIOMETRIC_SUCCESS -> showBiometricPrompt()
-            else -> {
-                // No biometric hardware or none enrolled — skip auth
-                onAuthSuccess()
-            }
+        if (handler.canAuthenticate(context)) {
+            showBiometricPrompt()
+        } else {
+            onAuthSuccess()
         }
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .background(MaterialTheme.colorScheme.background)
+            .testTag("auth_screen"),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {

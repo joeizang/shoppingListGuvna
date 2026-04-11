@@ -3,15 +3,12 @@ package com.josephizang.shoplistguvna
 import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.josephizang.shoplistguvna.data.ShoppingRepository
-import com.josephizang.shoplistguvna.data.local.AppDatabase
 import com.josephizang.shoplistguvna.presentation.HomeScreen
 import com.josephizang.shoplistguvna.presentation.HomeViewModel
 import com.josephizang.shoplistguvna.presentation.HomeViewModelFactory
@@ -42,7 +39,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.josephizang.shoplistguvna.data.UserPreferencesRepository
 import com.josephizang.shoplistguvna.presentation.SettingsScreen
 import kotlinx.coroutines.launch
 import com.josephizang.shoplistguvna.ui.theme.ShopListGuvnaTheme
@@ -52,9 +48,9 @@ class MainActivity : FragmentActivity() {
         setTheme(R.style.Theme_ShopListGuvna)
         super.onCreate(savedInstanceState)
 
-        val database = AppDatabase.getDatabase(this)
-        val repository = ShoppingRepository(database.shoppingDao())
-        val userPreferencesRepository = UserPreferencesRepository(this)
+        val container = (application as ShopListGuvnaApplication).container
+        val repository = container.shoppingRepository
+        val userPreferencesRepository = container.userPreferencesRepository
 
         setContent {
             val isDarkMode by userPreferencesRepository.isDarkMode.collectAsState(initial = true)
@@ -68,7 +64,6 @@ class MainActivity : FragmentActivity() {
 
                 Scaffold(
                     bottomBar = {
-                        // Only show bottom bar on top-level screens
                         if (currentRoute == "home" || currentRoute == "settings" || currentRoute == "history") {
                             NavigationBar(
                                 containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
@@ -82,11 +77,11 @@ class MainActivity : FragmentActivity() {
                                             restoreState = true
                                         }
                                     },
-                                    icon = { 
+                                    icon = {
                                         Icon(
-                                            if (currentRoute == "home") Icons.Filled.Home else Icons.Outlined.Home, 
+                                            if (currentRoute == "home") Icons.Filled.Home else Icons.Outlined.Home,
                                             contentDescription = "Home"
-                                        ) 
+                                        )
                                     },
                                     label = { Text("Home") },
                                     colors = NavigationBarItemDefaults.colors(
@@ -106,11 +101,11 @@ class MainActivity : FragmentActivity() {
                                             restoreState = true
                                         }
                                     },
-                                    icon = { 
+                                    icon = {
                                         Icon(
-                                            if (currentRoute == "history") Icons.Filled.DateRange else Icons.Outlined.DateRange, 
+                                            if (currentRoute == "history") Icons.Filled.DateRange else Icons.Outlined.DateRange,
                                             contentDescription = "History"
-                                        ) 
+                                        )
                                     },
                                     label = { Text("History") },
                                     colors = NavigationBarItemDefaults.colors(
@@ -130,11 +125,11 @@ class MainActivity : FragmentActivity() {
                                             restoreState = true
                                         }
                                     },
-                                    icon = { 
+                                    icon = {
                                         Icon(
-                                            if (currentRoute == "settings") Icons.Filled.Settings else Icons.Outlined.Settings, 
+                                            if (currentRoute == "settings") Icons.Filled.Settings else Icons.Outlined.Settings,
                                             contentDescription = "Settings"
-                                        ) 
+                                        )
                                     },
                                     label = { Text("Settings") },
                                     colors = NavigationBarItemDefaults.colors(
@@ -160,7 +155,8 @@ class MainActivity : FragmentActivity() {
                                     navController.navigate("auth") {
                                         popUpTo("splash") { inclusive = true }
                                     }
-                                }
+                                },
+                                delayMs = container.splashDelayMs
                             )
                         }
 
@@ -170,7 +166,8 @@ class MainActivity : FragmentActivity() {
                                     navController.navigate("home") {
                                         popUpTo("auth") { inclusive = true }
                                     }
-                                }
+                                },
+                                handler = container.biometricAuthHandler
                             )
                         }
 

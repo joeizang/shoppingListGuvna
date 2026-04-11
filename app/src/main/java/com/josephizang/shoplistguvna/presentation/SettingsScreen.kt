@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Divider
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -13,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
@@ -24,7 +27,8 @@ fun SettingsScreen(
     onToggleTotalsVisible: (Boolean) -> Unit
 ) {
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = MaterialTheme.colorScheme.background,
+        modifier = Modifier.testTag("settings_screen")
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -58,13 +62,19 @@ fun SettingsScreen(
                 Switch(
                     checked = isDarkMode,
                     onCheckedChange = onToggleDarkMode,
+                    modifier = Modifier.testTag("dark_mode_toggle"),
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                         checkedTrackColor = MaterialTheme.colorScheme.primary
                     )
                 )
             }
-            Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+            )
 
             // Show list totals setting
             Row(
@@ -87,13 +97,19 @@ fun SettingsScreen(
                 Switch(
                     checked = isTotalsVisible,
                     onCheckedChange = onToggleTotalsVisible,
+                    modifier = Modifier.testTag("show_totals_toggle"),
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                         checkedTrackColor = MaterialTheme.colorScheme.primary
                     )
                 )
             }
-            Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+            )
             // potentially other settings...
         }
     }

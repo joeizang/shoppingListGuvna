@@ -41,8 +41,14 @@ interface ShoppingDao {
     @Query("SELECT * FROM shopping_items WHERE listId = :listId")
     fun getItemsForList(listId: Long): Flow<List<ShoppingItem>>
 
+    @Query("SELECT * FROM shopping_items WHERE listId = :listId")
+    suspend fun getItemsForListOnce(listId: Long): List<ShoppingItem>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertItem(item: ShoppingItem)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertItems(items: List<ShoppingItem>)
 
     @Update
     suspend fun updateItem(item: ShoppingItem)
@@ -80,5 +86,30 @@ interface ShoppingDao {
         val bought = getListBoughtTotal(listId) ?: 0.0
         val count = getListItemCount(listId)
         updateListTotalAndCount(listId, total, bought, count)
+    }
+
+    @Transaction
+    suspend fun duplicateList(sourceListId: Long, newListName: String): Long {
+        val newListId = insertList(
+            ShoppingList(
+                name = newListName,
+                isArchived = false
+            )
+        )
+
+        val copiedItems = getItemsForListOnce(sourceListId).map { item ->
+            item.copy(
+                id = 0,
+                listId = newListId,
+                isChecked = false
+            )
+        }
+
+        if (copiedItems.isNotEmpty()) {
+            insertItems(copiedItems)
+        }
+
+        calculateAndUpdateListTotal(newListId)
+        return newListId
     }
 }

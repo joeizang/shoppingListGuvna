@@ -38,4 +38,8 @@ class ShoppingRepository(private val shoppingDao: ShoppingDao) {
     suspend fun deleteList(list: ShoppingList) {
         shoppingDao.deleteList(list)
     }
+
+    suspend fun duplicateList(sourceListId: Long, newListName: String): Long {
+        return shoppingDao.duplicateList(sourceListId, newListName)
+    }
 }

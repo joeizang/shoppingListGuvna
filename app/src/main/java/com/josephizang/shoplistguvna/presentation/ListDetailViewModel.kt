@@ -61,6 +61,19 @@ class ListDetailViewModel(
         }
     }
 
+    fun updateItem(item: ShoppingItem, newName: String, newQuantity: Int, newPricePerUnit: Double) {
+        viewModelScope.launch {
+            repository.updateItem(
+                item.copy(
+                    name = newName,
+                    quantity = newQuantity,
+                    pricePerUnit = newPricePerUnit
+                )
+            )
+            loadListMetadata()
+        }
+    }
+
     fun archiveList() {
         viewModelScope.launch {
             repository.setListArchived(listId, true)
@@ -70,6 +83,12 @@ class ListDetailViewModel(
     fun unarchiveList() {
         viewModelScope.launch {
             repository.setListArchived(listId, false)
+        }
+    }
+
+    fun duplicateList(newName: String) {
+        viewModelScope.launch {
+            repository.duplicateList(listId, newName)
         }
     }
 }

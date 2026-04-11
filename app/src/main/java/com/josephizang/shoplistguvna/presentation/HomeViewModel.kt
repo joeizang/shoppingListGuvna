@@ -31,8 +31,15 @@ class HomeViewModel(private val repository: ShoppingRepository) : ViewModel() {
     }
     
     fun deleteList(list: ShoppingList) {
-        viewModelScope.launch { 
+        viewModelScope.launch {
             repository.deleteList(list)
+        }
+    }
+
+    fun duplicateList(list: ShoppingList) {
+        if (list.totalItems == 0) return
+        viewModelScope.launch {
+            repository.duplicateList(list.id, "${list.name} (copy)")
         }
     }
 }

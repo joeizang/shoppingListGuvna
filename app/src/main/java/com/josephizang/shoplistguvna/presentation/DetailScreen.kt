@@ -22,14 +22,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Unarchive
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -54,6 +55,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
@@ -71,6 +73,9 @@ fun ListDetailScreen(
     val currentList by viewModel.currentList.collectAsState()
     val items by viewModel.items.collectAsState()
     var showAddItemSheet by remember { mutableStateOf(false) }
+    var itemToEdit by remember { mutableStateOf<ShoppingItem?>(null) }
+    var showDuplicateDialog by remember { mutableStateOf(false) }
+    var duplicateListName by remember { mutableStateOf("") }
 
     // Currency formatter
 
@@ -92,6 +97,12 @@ fun ListDetailScreen(
 
                 actions = {
                     val isArchived = currentList?.isArchived == true
+                    IconButton(onClick = {
+                        duplicateListName = "${currentList?.name ?: ""} (Copy)"
+                        showDuplicateDialog = true
+                    }) {
+                        Icon(Icons.Default.ContentCopy, contentDescription = "Duplicate List")
+                    }
                     IconButton(onClick = {
                         if (isArchived) viewModel.unarchiveList() else viewModel.archiveList()
                         onBack()
@@ -161,26 +172,87 @@ fun ListDetailScreen(
         LazyColumn(
             modifier = Modifier
                 .padding(innerPadding)
-                .fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 80.dp) // Space for bottom bar
+                .fillMaxSize()
+                .testTag("list_detail_screen"),
+            contentPadding = PaddingValues(bottom = 80.dp)
         ) {
             items(items) { item ->
                 ShoppingItemRow(
                     item = item,
                     onToggle = { viewModel.toggleItemChecked(item) },
-                    onDelete = { viewModel.deleteItem(item) }
+                    onDelete = { viewModel.deleteItem(item) },
+                    onEdit = { itemToEdit = item }
                 )
-                Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                )
             }
         }
     }
 
     if (showAddItemSheet) {
-        AddItemSheet(
+        ItemFormSheet(
+            title = "Add Item",
+            actionLabel = "Add",
             onDismiss = { showAddItemSheet = false },
-            onAdd = { name, quantity, price ->
+            onSubmit = { name, quantity, price ->
                 viewModel.addItem(name, quantity, price)
                 showAddItemSheet = false
+            }
+        )
+    }
+
+    itemToEdit?.let { editing ->
+        ItemFormSheet(
+            title = "Edit Item",
+            actionLabel = "Save",
+            initialName = editing.name,
+            initialQuantity = editing.quantity.toString(),
+            initialPrice = if (editing.pricePerUnit == 0.0) "" else editing.pricePerUnit.toString(),
+            onDismiss = { itemToEdit = null },
+            onSubmit = { name, quantity, price ->
+                viewModel.updateItem(editing, name, quantity, price)
+                itemToEdit = null
+            }
+        )
+    }
+
+    if (showDuplicateDialog) {
+        AlertDialog(
+            onDismissRequest = { showDuplicateDialog = false },
+            title = { Text("Duplicate List") },
+            text = {
+                Column {
+                    Text("Enter a name for the duplicated list:")
+                    Spacer(modifier = Modifier.height(12.dp))
+                    TextField(
+                        value = duplicateListName,
+                        onValueChange = { duplicateListName = it },
+                        label = { Text("List Name") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth().testTag("duplicate_name_input"),
+                        isError = duplicateListName.isBlank()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.duplicateList(duplicateListName)
+                        showDuplicateDialog = false
+                    },
+                    enabled = duplicateListName.isNotBlank()
+                ) {
+                    Text("Duplicate")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDuplicateDialog = false }) {
+                    Text("Cancel")
+                }
             }
         )
     }
@@ -190,15 +262,16 @@ fun ListDetailScreen(
 fun ShoppingItemRow(
     item: ShoppingItem,
     onToggle: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onEdit: () -> Unit
 ) {
     val format = NumberFormat.getCurrencyInstance(Locale("en", "NG"))
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
-            .height(56.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .height(64.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Checkbox(
@@ -208,7 +281,7 @@ fun ShoppingItemRow(
                 checkedColor = MaterialTheme.colorScheme.primary
             )
         )
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = item.name,
@@ -222,42 +295,59 @@ fun ShoppingItemRow(
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
         }
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                text = format.format(item.totalPrice),
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+        Text(
+            text = format.format(item.totalPrice),
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+        )
+        IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) {
+            Icon(
+                Icons.Default.Edit,
+                contentDescription = "Edit",
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
             )
-            // Optional delete icon if needed, or swipe to delete (keeping simple click here)
-             IconButton(onClick = onDelete, modifier = Modifier.size(24.dp)) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f)
-                )
-            }
+        }
+        IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
+            Icon(
+                Icons.Default.Delete,
+                contentDescription = "Delete",
+                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f)
+            )
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddItemSheet(onDismiss: () -> Unit, onAdd: (String, Int, Double) -> Unit) {
+fun ItemFormSheet(
+    title: String,
+    actionLabel: String,
+    initialName: String = "",
+    initialQuantity: String = "1",
+    initialPrice: String = "",
+    onDismiss: () -> Unit,
+    onSubmit: (String, Int, Double) -> Unit
+) {
     val sheetState = rememberModalBottomSheetState()
-    var name by remember { mutableStateOf("") }
-    var quantity by remember { mutableStateOf("1") }
-    var price by remember { mutableStateOf("") }
+    var name by remember(initialName) { mutableStateOf(initialName) }
+    var quantity by remember(initialQuantity) { mutableStateOf(initialQuantity) }
+    var price by remember(initialPrice) { mutableStateOf(initialPrice) }
+
+    val quantityValid = quantity.toIntOrNull()?.let { it >= 1 } == true
+    val priceValid = price.isEmpty() || price.toDoubleOrNull() != null
+    val submitEnabled = name.isNotBlank() && quantityValid && priceValid
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = sheetState
+        sheetState = sheetState,
+        modifier = Modifier.testTag("item_form_sheet")
     ) {
         Column(
             modifier = Modifier
                 .padding(24.dp)
-                .padding(bottom = 24.dp) // Extra padding for software keys
+                .padding(bottom = 24.dp)
         ) {
             Text(
-                "Add Item",
+                title,
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -266,8 +356,9 @@ fun AddItemSheet(onDismiss: () -> Unit, onAdd: (String, Int, Double) -> Unit) {
                 value = name,
                 onValueChange = { name = it },
                 label = { Text("Item Name") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                modifier = Modifier.fillMaxWidth().testTag("item_name_input"),
+                singleLine = true,
+                isError = name.isBlank()
             )
             Spacer(modifier = Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -275,16 +366,18 @@ fun AddItemSheet(onDismiss: () -> Unit, onAdd: (String, Int, Double) -> Unit) {
                     value = quantity,
                     onValueChange = { if (it.all { char -> char.isDigit() }) quantity = it },
                     label = { Text("Qty") },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).testTag("item_quantity_input"),
                     singleLine = true,
+                    isError = !quantityValid,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
                 TextField(
                     value = price,
-                    onValueChange = { price = it }, // Allow decimals
+                    onValueChange = { price = it },
                     label = { Text("Price (₦)") },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).testTag("item_price_input"),
                     singleLine = true,
+                    isError = price.isNotEmpty() && !priceValid,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
             }
@@ -293,13 +386,13 @@ fun AddItemSheet(onDismiss: () -> Unit, onAdd: (String, Int, Double) -> Unit) {
                 onClick = {
                     val qty = quantity.toIntOrNull() ?: 1
                     val prc = price.toDoubleOrNull() ?: 0.0
-                    if (name.isNotBlank()) {
-                        onAdd(name, qty, prc)
-                    }
+                    onSubmit(name, qty, prc)
                 },
+                enabled = submitEnabled,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             ) {
+                Text(actionLabel)
             }
         }
     }

@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.josephizang.shoplistguvna.presentation.HomeViewModel
@@ -43,6 +44,7 @@ fun ArchivedListsScreen(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
+                .testTag("history_screen")
         ) {
             Text(
                 text = "Archived Lists",
@@ -67,7 +69,9 @@ fun ArchivedListsScreen(
                         ShoppingListCard(
                             list = list,
                             isTotalVisible = isTotalsVisible,
-                            onClick = { onNavigateToList(list.id) }
+                            onClick = { onNavigateToList(list.id) },
+                            onDuplicate = { viewModel.duplicateList(list) },
+                            onDelete = { viewModel.deleteList(list) }
                         )
                     }
                 }

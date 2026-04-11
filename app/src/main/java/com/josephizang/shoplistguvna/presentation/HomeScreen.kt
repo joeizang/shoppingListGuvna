@@ -3,6 +3,7 @@ package com.josephizang.shoplistguvna.presentation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,10 +18,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -93,6 +100,7 @@ fun HomeScreen(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
+                .testTag("home_screen")
         ) {
             Text(
                 text = "Your Lists",
@@ -100,16 +108,33 @@ fun HomeScreen(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
 
-            LazyColumn(
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(activeLists) { list ->
-                    ShoppingListCard(
-                        list = list, 
-                        isTotalVisible = isTotalsVisible,
-                        onClick = { onNavigateToList(list.id) }
+            if (activeLists.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .testTag("empty_home_state"),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "No lists yet. Tap + to create one.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
+                }
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(activeLists) { list ->
+                        ShoppingListCard(
+                            list = list,
+                            isTotalVisible = isTotalsVisible,
+                            onClick = { onNavigateToList(list.id) },
+                            onDuplicate = { viewModel.duplicateList(list) },
+                            onDelete = { viewModel.deleteList(list) }
+                        )
+                    }
                 }
             }
         }
@@ -144,75 +169,105 @@ fun getCardColor(id: Long): Color {
 
 
 @Composable
-fun ShoppingListCard(list: ShoppingList, isTotalVisible: Boolean, onClick: () -> Unit) {
-    // Currency formatter
+fun ShoppingListCard(
+    list: ShoppingList,
+    isTotalVisible: Boolean,
+    onClick: () -> Unit,
+    onDuplicate: () -> Unit,
+    onDelete: () -> Unit
+) {
     val format = NumberFormat.getCurrencyInstance(Locale("en", "NG"))
     val date = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(list.createdAt)
     val cardColor = getCardColor(list.id)
-    
-    // Calculate Pending (Start Amount - Spent Amount)
-    // If we bought more than estimated (logic wise shouldn't happen often if strict, but possible), clamp to 0 or show negative? 
-    // Usually Pending = Estimated - Bought.
     val pending = list.totalEstimated - list.totalBought
+    var menuExpanded by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(130.dp) // Large tile
+            .height(130.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = cardColor, // Unique accent color
-        ),
+        colors = CardDefaults.cardColors(containerColor = cardColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = list.name,
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                    color = Color.Black 
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = date,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Black.copy(alpha = 0.6f)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                // Item Count
-                 Text(
-                    text = "${list.totalItems} Items",
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = Color.Black.copy(alpha = 0.8f)
-                )
+        Box(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = list.name,
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                        color = Color.Black
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = date,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Black.copy(alpha = 0.6f)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "${list.totalItems} Items",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                        color = Color.Black.copy(alpha = 0.8f)
+                    )
+                }
+
+                // Amounts Column
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "PENDING",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = Color.Black.copy(alpha = 0.5f)
+                    )
+                    Text(
+                        text = if (isTotalVisible) format.format(pending) else "****",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        color = if (isTotalVisible) MaterialTheme.colorScheme.primary else Color.Black.copy(alpha = 0.5f)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = if (isTotalVisible) "Orig: ${format.format(list.totalEstimated)}" else "Orig: ****",
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                        color = Color.Black.copy(alpha = 0.6f)
+                    )
+                }
             }
-            
-            // Amounts Column
-            Column(horizontalAlignment = Alignment.End) {
-                 Text(
-                    text = "PENDING",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = Color.Black.copy(alpha = 0.5f)
-                )
-                Text(
-                    text = if (isTotalVisible) format.format(pending) else "****",
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                    color = if(isTotalVisible) MaterialTheme.colorScheme.primary else Color.Black.copy(alpha = 0.5f)
-                )
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                Text(
-                    text = if (isTotalVisible) "Orig: ${format.format(list.totalEstimated)}" else "Orig: ****",
-                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                    color = Color.Black.copy(alpha = 0.6f)
-                )
+
+            // Overflow menu anchor at top-end
+            Box(modifier = Modifier.align(Alignment.TopEnd)) {
+                IconButton(onClick = { menuExpanded = true }) {
+                    Icon(
+                        Icons.Default.MoreVert,
+                        contentDescription = "More options",
+                        tint = Color.Black.copy(alpha = 0.6f)
+                    )
+                }
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Duplicate") },
+                        enabled = list.totalItems > 0,
+                        onClick = {
+                            menuExpanded = false
+                            onDuplicate()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Delete") },
+                        onClick = {
+                            menuExpanded = false
+                            onDelete()
+                        }
+                    )
+                }
             }
         }
     }
@@ -225,7 +280,8 @@ fun CreateListDialog(onDismiss: () -> Unit, onCreate: (String) -> Unit) {
         Surface(
             shape = RoundedCornerShape(16.dp),
             color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 6.dp
+            tonalElevation = 6.dp,
+            modifier = Modifier.testTag("create_list_dialog")
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
                 Text(
@@ -238,6 +294,7 @@ fun CreateListDialog(onDismiss: () -> Unit, onCreate: (String) -> Unit) {
                     onValueChange = { name = it },
                     label = { Text("List Name") },
                     singleLine = true,
+                    modifier = Modifier.testTag("list_name_input"),
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent

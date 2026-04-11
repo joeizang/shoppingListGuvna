@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -27,16 +28,17 @@ import kotlinx.coroutines.delay
 import com.josephizang.shoplistguvna.R
 
 @Composable
-fun SplashScreen(onNavigateToHome: () -> Unit) {
+fun SplashScreen(onNavigateToHome: () -> Unit, delayMs: Long = 2500L) {
     LaunchedEffect(key1 = true) {
-        delay(2500) // 2.5 seconds delay
+        delay(delayMs)
         onNavigateToHome()
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .background(MaterialTheme.colorScheme.background)
+            .testTag("splash_screen"),
         contentAlignment = Alignment.Center
     ) {
         Image(

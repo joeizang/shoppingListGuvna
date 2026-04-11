@@ -68,5 +68,14 @@ abstract class AppDatabase : RoomDatabase() {
                 instance
             }
         }
+
+        fun getInMemoryDatabase(context: Context): AppDatabase {
+            return Room.inMemoryDatabaseBuilder(
+                context.applicationContext,
+                AppDatabase::class.java
+            )
+            .allowMainThreadQueries()
+            .build()
+        }
     }
 }
